@@ -1,4 +1,3 @@
-
 # newest version of netmeta does not have the function pairwise() anymore
 #remove.packages("netmeta")
 #install.packages("netmeta_2.9-0.tar.gz", repos = NULL, type = "source")
