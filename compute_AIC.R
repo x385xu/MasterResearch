@@ -49,6 +49,7 @@ compute_AIC <- function(dat = dat_nmadb, ind) {
     
   }
   return(list(
+    ind = ind,
     recid =  dat$recid[ind],
     AIC_add  = AIC_add,
     AIC_fixed = AIC_fixed,
