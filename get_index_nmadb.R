@@ -7,12 +7,13 @@ library(dplyr)
 #   whether it's multiarm, and whether it uses a random effect model
 # measure: string, like "risk ratio" or "odds ratio"
 # multiarm: TRUE = allow multiarm studies; FALSE = only include 2-arm studies
-# fixed: TRUE = allow fixed-effect models
-get_index_nmadb <- function(measure, 
+# fixed: TRUE = allow fixed-effect models; FALSE = only include additive effect models
+get_index_nmadb <- function(dat = dat_nmadb,
+                            measure, 
                             multiarm = FALSE, 
-                            random = FALSE) {
+                            fixed = FALSE) {
   # Extract index with the according measure
-  ind_measure <- which(dat_nmadb$Effect.Measure== measure)
+  ind_measure <- which(dat_nmadb$Effect.Measure == measure)
   
   ind <- c()
   for (i in ind_measure) {
@@ -20,14 +21,16 @@ get_index_nmadb <- function(measure,
     net <- tryCatch({runnetmeta(dat_nmadb$recid[i])}, 
                     error = function(e) {return(NULL)})
     
-    # Skip if nma is NULL due to error
-    if (is.null(net) && !is.list(net)) next
+    # Skip if net is not a list
+    if (!is.list(net)) next
     
-    has_multi <- any(net$multiarm) # is FALSE if every entry is FALSE
-    if (multiarm != has_multi) next
+    has_multi <- any(net$multiarm) # is FALSE if every entry is FALSE (no multiarm studies)
+    # Skip multiarm study when multi=FALSE
+    if ((!multiarm) && has_multi) next
     
-    is_random <- (net$tau > 0)
-    if (random != is_random) next
+    is_fixed <- (net$tau == 0)
+    # Skip fixed effect model when fixed=FALSE
+    if ((!fixed) && is_fixed) next
     
     ind <- c(ind, i)
   }
@@ -35,23 +38,3 @@ get_index_nmadb <- function(measure,
 }
 
 
-
-#TEST
-# # Load NMA database catalog
-# dat_nmadb <- getNMADB()
-# 
-# # Extract relevant info
-# dat_nmadb <- dat_nmadb %>% 
-#   select(Record.ID, Title, First.Author, Year, 
-#          Number.of.Studies.., Number.of.Treatments, 
-#          Type.of.Outcome., Effect.Measure, Fixed.effect.or.Random.effects.model,
-#          Primary.Outcome, Description.of.the.outcome.s., Harmful.Beneficial.Outcome,
-#          dataset) %>%
-#   rename(recid = Record.ID) %>%
-#   mutate(Year = as.numeric(format(as.Date(Year, format="%Y-%m-%d"),"%Y")), .keep = "unused") 
-# 
-# 
-# ind_rr_r <- get_index_nmadb(dat = dat_nmadb, 
-#                             measure = "risk ratio", 
-#                             multiarm = FALSE, 
-#                             random = TRUE)

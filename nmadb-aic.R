@@ -21,146 +21,142 @@ dat_nmadb <- dat_nmadb %>%
   rename(recid = Record.ID) %>%
   mutate(Year = as.numeric(format(as.Date(Year, format="%Y-%m-%d"),"%Y")), .keep = "unused") 
 
-nma_test <- runnetmeta(dat_nmadb$recid[2])
+#nma_test <- runnetmeta(dat_nmadb$recid[2])
+
+source("get_index_nmadb.R")
+source("compute_AIC.R")
+
+#=====risk ratio=========================================================================
+
+ind_rr_a <- get_index_nmadb(dat = dat_nmadb,
+                            measure = "risk ratio",
+                            multiarm = FALSE,
+                            fixed = FALSE)
+AIC_rr_a <- compute_AIC(dat = dat_nmadb,ind_rr_a)
+
+ind_rr_f <- get_index_nmadb(dat = dat_nmadb,
+                            measure = "risk ratio",
+                            multiarm = FALSE,
+                            fixed = TRUE)
+AIC_rr_f <- compute_AIC(dat = dat_nmadb,ind_rr_f)
+
+par(mfrow = c(1, 2))
+hist(AIC_rr_a$AIC_mul_add,
+     main = "AIC difference - risk ratio",
+     xlab = "AIC difference (multiplicative-additive)",
+     breaks = seq(floor(min(AIC_rr_a$AIC_mul_add)), 
+                  ceiling(max(AIC_rr_a$AIC_mul_add)), by = 1))
+abline(v = c(-3,3), col = "red", lty = 2)
+
+hist(AIC_rr_f$AIC_mul_fixed,
+     main = "AIC difference - risk ratio",
+     xlab = "AIC difference (multiplicative-fixed)",
+     breaks = seq(floor(min(AIC_rr_f$AIC_mul_fixed)), 
+                  ceiling(max(AIC_rr_f$AIC_mul_fixed)), by = 1))
+abline(v = c(-3,3), col = "red", lty = 2)
 
 
-#=====RR=====================================================================================
-# Extract dataset which use risk ratio, random effects model, and only have two-arm studies
-rr <- which(dat_nmadb$Effect.Measure== "risk ratio")
+#======odds ratio=======================================================================
 
-ind_rr <- c()
-for (i in rr) {
-  nma <- tryCatch({runnetmeta(dat_nmadb$recid[i])}, error = function(e) {
-    return(NULL)
-  })
-  
-  # Skip if nma is NULL due to error
-  if (!is.null(nma) && is.list(nma)) {
-    if (nma$tau > 0 && all(nma$multiarm == FALSE)) {
-      ind_rr <- c(ind_rr, i)
-    }
-  }
-}
-len_rr <- length(ind_rr)
+ind_or_a <- get_index_nmadb(dat = dat_nmadb,
+                            measure = "odds ratio",
+                            multiarm = FALSE,
+                            fixed = FALSE)
+AIC_or_a <- compute_AIC(dat = dat_nmadb,ind_or_a)
 
-# Loop through the extracted datasets and calculate the AIC difference
-AICdiff_rr <- numeric(len_rr)
-AIC_add_rr <- numeric(len_rr)
-AIC_mul_rr <- numeric(len_rr)
+ind_or_f <- get_index_nmadb(dat = dat_nmadb,
+                            measure = "odds ratio",
+                            multiarm = FALSE,
+                            fixed = TRUE)
+AIC_or_f <- compute_AIC(dat = dat_nmadb,ind_or_f)
 
-for (j in 1:len_rr) {
-  i <- ind_rr[j]
-  net <- runnetmeta(dat_nmadb$recid[i])
-  # Observed TE
-  theta <- net$TE
-  m <- net$m
-  n <- net$n
-  tau_hat <- net$tau
-  # Diagonal matrix of observed var (multiplicative model)
-  V <- diag(net$seTE^2)
-  # var matrix for additive model
-  sig <- V+tau_hat^2*diag(m)
-  
-  # fitted TE 
-  theta_add <- net$TE.nma.random
-  logL_add <- -0.5*(m*log(2*pi)+
-                      log(det(sig))+ 
-                      t(theta-theta_add) %*% solve(sig) %*% (theta-theta_add))
-  
-  theta_mul <- net$TE.nma.common
-  phi <- as.numeric(1/(m-n+1) * t(theta-theta_mul) %*% 
-                      solve(V) %*% (theta-theta_mul))
-  logL_mul <- -0.5*(m*log(2*pi)+
-                      log(det(phi*V))+ 
-                      t(theta-theta_mul) %*% solve(phi*V) %*% (theta-theta_mul))
-  
-  # AIC = 2k-2log(L), k is the number of estimated parameters
-  # d is n-1 dimensional + 1 (phi or tau) = n
-  AIC_add <- 2*n-2*logL_add
-  AIC_mul <- 2*n-2*logL_mul
-  
-  AIC_add_rr[j] <- AIC_add
-  AIC_mul_rr[j] <- AIC_mul
-  
-  # AIC_add - AIC_mul
-  AICdiff_rr[j] <- AIC_add-AIC_mul
-}
+par(mfrow = c(1, 2))
 
-hist(AICdiff_rr,
-     main = "AIC_add - AIC_mul (risk ratio)",
-     xlab = "AIC difference (additive - multiplicative)",
-     breaks = seq(floor(min(AICdiff_rr)), ceiling(max(AICdiff_rr)), by = 1))
+hist(AIC_or_a$AIC_mul_add,
+     main = "AIC difference - odds ratio",
+     xlab = "AIC difference (multiplicative-additive)",
+     breaks = seq(floor(min(AIC_or_a$AIC_mul_add)), 
+                  ceiling(max(AIC_or_a$AIC_mul_add)), by = 1))
+abline(v = c(-3,3), col = "red", lty = 2)
 
-abline(v = 0, col = "red", lty = 2)
+hist(AIC_or_f$AIC_mul_fixed,
+     main = "AIC difference - odds ratio",
+     xlab = "AIC difference (multiplicative-fixed)",
+     breaks = seq(floor(min(AIC_or_f$AIC_mul_fixed)), 
+                  ceiling(max(AIC_or_f$AIC_mul_fixed)), by = 1))
+abline(v = c(-3,3), col = "red", lty = 2)
+
+#========mean difference =======================================================
+ind_md_a <- get_index_nmadb(dat = dat_nmadb,
+                            measure = "mean difference",
+                            multiarm = FALSE,
+                            fixed = FALSE)
+AIC_md_a <- compute_AIC(dat = dat_nmadb,ind_md_a)
+
+ind_md_f <- get_index_nmadb(dat = dat_nmadb,
+                            measure = "mean difference",
+                            multiarm = FALSE,
+                            fixed = TRUE)
+AIC_md_f <- compute_AIC(dat = dat_nmadb,ind_md_f)
+
+par(mfrow = c(1, 2))
+
+hist(AIC_md_a$AIC_mul_add,
+     main = "AIC difference - mean difference",
+     xlab = "AIC difference (multiplicative-additive)",
+     breaks = seq(floor(min(AIC_md_a$AIC_mul_add)), 
+                  ceiling(max(AIC_md_a$AIC_mul_add)), by = 1))
+abline(v = c(-3,3), col = "red", lty = 2)
+
+hist(AIC_md_f$AIC_mul_fixed,
+     main = "AIC difference -
+     mean difference",
+     xlab = "AIC difference (multiplicative-fixed)",
+     breaks = seq(floor(min(AIC_md_f$AIC_mul_fixed)), 
+                  ceiling(max(AIC_md_f$AIC_mul_fixed)), by = 1))
+
+abline(v = c(-3,3), col = "red", lty = 2)
 
 
+#============================================
+AIC_md_f$AIC_mul_fixed[5]
+AIC_md_f$AIC_mul_add
 
-#======OR========================================================================
-# Extract dataset which use odds ratio, random effects model, and only have two-arm studies
-or <- which(dat_nmadb$Effect.Measure== "odds ratio")
+net <- runnetmeta(dat_nmadb$recid[ind_md_f[5]])
 
-ind_or <- c()
-for (i in or) {
-  nma <- tryCatch({runnetmeta(dat_nmadb$recid[i])}, error = function(e) {
-    return(NULL)
-  })
-  
-  # Skip if nma is NULL due to error
-  if (!is.null(nma) && is.list(nma)) {
-    if (nma$tau > 0 && all(nma$multiarm == FALSE)) {
-      ind_or <- c(ind_or, i)
-    }
-  }
-}
+theta <- net$TE
+m <- net$m
+n <- net$n
+#multiplicative effect
+V <- diag(net$seTE^2)
+theta_m <- net$TE.nma.fixed
+phi <- as.numeric(1/(m-n+1) * t(theta-theta_m) %*% 
+                    solve(V) %*% (theta-theta_m))
 
-len_or <- length(ind_or)
+logL_m <- -0.5*(m*log(2*pi)+
+                   log(det(phi*V))+ 
+                   t(theta-theta_m) %*% solve(phi*V) %*% (theta-theta_m))
+AIC_m <- 2*n-2*logL_m
 
-# Loop through the extracted datasets and calculate the AIC difference
-AICdiff_or <- numeric(len_or)
-AIC_add_or <- numeric(len_or)
-AIC_mul_or <- numeric(len_or)
+# fixed
+sig <- V
+theta_f <- net$TE.nma.fixed
+logL_f <- -0.5*(m*log(2*pi)+
+                   log(det(V))+ 
+                   t(theta-theta_f) %*% solve(V) %*% (theta-theta_f))
+AIC_f <- 2*(n-1)-2*logL_f
 
-for (j in 1:len_or) {
-  i <- ind_or[j]
-  net <- runnetmeta(dat_nmadb$recid[i])
-  # Observed TE
-  theta <- net$TE
-  m <- net$m
-  n <- net$n
-  tau_hat <- net$tau
-  # Diagonal matrix of observed var (multiplicative model)
-  V <- diag(net$seTE^2)
-  # var matrix for additive model
-  sig <- V+tau_hat^2*diag(m)
-  
-  # fitted TE 
-  theta_add <- net$TE.nma.random
-  logL_add <- -0.5*(m*log(2*pi)+
-                      log(det(sig))+ 
-                      t(theta-theta_add) %*% solve(sig) %*% (theta-theta_add))
-  
-  theta_mul <- net$TE.nma.common
-  phi <- as.numeric(1/(m-n+1) * t(theta-theta_mul) %*% 
-                      solve(V) %*% (theta-theta_mul))
-  logL_mul <- -0.5*(m*log(2*pi)+
-                      log(det(phi*V))+ 
-                      t(theta-theta_mul) %*% solve(phi*V) %*% (theta-theta_mul))
-  
-  # AIC = 2k-2log(L), k is the number of estimated parameters
-  # d is n-1 dimensional + 1 (phi or tau) = n
-  AIC_add <- 2*n-2*logL_add
-  AIC_mul <- 2*n-2*logL_mul
-  
-  AIC_add_or[j] <- AIC_add
-  AIC_mul_or[j] <- AIC_mul
-  
-  # AIC_add - AIC_mul
-  AICdiff_or[j] <- AIC_add-AIC_mul
-}
+# additive
+tau_hat <- net$tau
+sig <- V+tau_hat^2*diag(m)
+theta_a <- net$TE.nma.random
+logL_a <- -0.5*(m*log(2*pi)+
+                   log(det(sig))+ 
+                   t(theta-theta_a) %*% solve(sig) %*% (theta-theta_a))
+AIC_a <- 2*n-2*logL_a
 
-hist(AICdiff_or,
-     main = "AIC_add - AIC_mul (odds ratio)",
-     xlab = "AIC difference (additive - multiplicative)",
-     breaks = seq(floor(min(AICdiff_or)), ceiling(max(AICdiff_or)), by = 1))
+#==plot===============================
 
-abline(v = 0, col = "red", lty = 2)
+
+
+
