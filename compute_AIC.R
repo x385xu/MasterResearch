@@ -9,6 +9,8 @@ compute_AIC <- function(dat = dat_nmadb, ind) {
   AIC_add <- numeric(len)
   AIC_fixed <- numeric(len)
   AIC_mul <- numeric(len)
+  taus <- numeric(len)
+  phis <- numeric(len)
   
   for (j in seq_along(ind)) {
     i <- ind[j]
@@ -24,6 +26,10 @@ compute_AIC <- function(dat = dat_nmadb, ind) {
     theta_me <- net$TE.nma.fixed # fitted TE
     phi <- as.numeric(t(theta-theta_me) %*% 
                         solve(V) %*% (theta-theta_me) / (m-n+1))
+    if (phi < 1) {
+      phi <- 1
+    }
+    
     logL_me <- -0.5*(m*log(2*pi)+
                         log(det(phi*V))+ 
                         t(theta-theta_me) %*% solve(phi*V) %*% (theta-theta_me))
@@ -46,16 +52,20 @@ compute_AIC <- function(dat = dat_nmadb, ind) {
                        t(theta-theta_fe) %*% solve(V) %*% (theta-theta_fe))
     AIC_fixed[j] <- 2*(n-1)-2*logL_fe
     
+    taus[j] <- tau_hat
+    phis[j] <- phi
     
   }
   return(list(
     ind = ind,
     recid =  dat$recid[ind],
-    AIC_add  = AIC_add,
-    AIC_fixed = AIC_fixed,
-    AIC_mul  = AIC_mul,
-    AIC_mul_add = AIC_mul - AIC_add,
-    AIC_mul_fixed = AIC_mul - AIC_fixed
+    tau = taus,
+    phi = phis,
+    add  = AIC_add,
+    fixed = AIC_fixed,
+    mul  = AIC_mul,
+    mul_add = AIC_mul - AIC_add,
+    mul_fixed = AIC_mul - AIC_fixed
   ))
 }
 

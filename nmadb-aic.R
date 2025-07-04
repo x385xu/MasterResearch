@@ -30,10 +30,10 @@ source("compute_AIC.R")
 #===============================================================================
 #AIC_mul_add = AIC_mul - AIC_add,
 #AIC_mul_fixed = AIC_mul - AIC_fixed
-#ΔAIC=AIC_add-AIC_fixed
-# ΔAIC < -3 -----additive-1
-# -3 < ΔAIC < 3 ---fixed-2
-# ΔAIC > 3 --------fixed-3
+#\delta AIC=AIC_add-AIC_fixed
+#\delta  AIC < -3 -----additive-1
+# -3 <\delta  AIC < 3 ---fixed-2
+# \delta AIC > 3 --------fixed-3
 
 
 #---------or-------------------------------------------------------------------
@@ -47,13 +47,6 @@ diffs_or <- AIC_or$add - AIC_or$fixed
 AICdiff_or_1 <- AIC_or$mul_add[which(diffs_or < -3)]
 AICdiff_or_2 <- AIC_or$mul_fixed[which(abs(diffs_or) <= 3)]
 AICdiff_or_3 <- AIC_or$mul_fixed[which(diffs_or > 3)]
-
-
-hist(AICdiff_or_1,
-     main = "AIC difference",
-     breaks = seq(floor(min(AICdiff_or_1)), 
-                  ceiling(max(AICdiff_or_1)), by = 1))
-abline(v = c(-3,3), col = "red", lty = 2)
 
 #-------------rr---------------------------------------------------------------
 ind_rr <-  get_index_nmadb(dat = dat_nmadb,
@@ -79,7 +72,7 @@ AICdiff_md_1 <- AIC_md$mul_add[which(diffs_md < -3)]
 AICdiff_md_2 <- AIC_md$mul_fixed[which(abs(diffs_md) <= 3)]
 AICdiff_md_3 <- AIC_md$mul_fixed[which(diffs_md > 3)]
 
-#===========plot===============================================================
+#===========AIC plot===============================================================
 library(ggplot2)
 
 # build a data-frame with one row per observation
@@ -107,12 +100,14 @@ ggplot(df, aes(x = value)) +
   geom_histogram(binwidth = 1, boundary = 0, color = "black", fill = "white") +
   geom_vline(xintercept = c(-3, 3), linetype = "dashed", color = "red") +
   facet_grid(measure ~ category, scales = "free") +
-  labs(x = expression(Delta~"AIC (Multiplicative-Additive or Fixed)"), 
+  labs(x = expression(Delta~"AIC (Multiplicative - Additive or Fixed)"), 
        y = "Count") +
   theme_minimal(base_size = 12)
 
+#======================================================
+AIC_or$phi[which(diffs_or >= 3)]
 
+AIC_rr$phi[which(diffs_rr >= 3)]
 
-
-
+AIC_md$phi[which(diffs_md >= 3)]
 
