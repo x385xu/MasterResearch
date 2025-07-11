@@ -11,6 +11,8 @@ compute_AIC <- function(dat = dat_nmadb, ind) {
   AIC_mul <- numeric(len)
   taus <- numeric(len)
   phis <- numeric(len)
+  Q <- numeric(len)
+  Q_pval <- numeric(len)
   
   for (j in seq_along(ind)) {
     i <- ind[j]
@@ -50,10 +52,12 @@ compute_AIC <- function(dat = dat_nmadb, ind) {
     logL_fe <- -0.5*(m*log(2*pi)+
                        log(det(V))+ 
                        t(theta-theta_fe) %*% solve(V) %*% (theta-theta_fe))
-    AIC_fixed[j] <- 2*(n-1)-2*logL_fe
+    AIC_fixed[j] <- 2*n-2*logL_fe
     
     taus[j] <- tau_hat
     phis[j] <- phi
+    Q[j] <- net$Q.heterogeneity
+    Q_pval[j] <- net$pval.Q.heterogeneity
     
   }
   return(list(
@@ -65,7 +69,9 @@ compute_AIC <- function(dat = dat_nmadb, ind) {
     fixed = AIC_fixed,
     mul  = AIC_mul,
     mul_add = AIC_mul - AIC_add,
-    mul_fixed = AIC_mul - AIC_fixed
+    mul_fixed = AIC_mul - AIC_fixed,
+    Q = Q,
+    Q_pval = Q_pval
   ))
 }
 
